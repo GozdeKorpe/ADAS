@@ -2,11 +2,19 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import time
+from playsound import playsound
+import os
+import threading
+
+# Construct the path to the sound file
+sound_file_path = os.path.join(os.path.dirname(__file__), 'sounds', 'ala.wav')
+def play_warning_sound(sound_path):
+    playsound(sound_path)
 
 # Initialize MediaPipe Face Mesh.
 mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_confidence=0.5, refine_landmarks=True ) # This helps with accuracy when wearing glasses
-sunglasses_detected = False
+
 # Function to calculate Eye Aspect Ratio (EAR)
 def calculate_ear(eye):
     # Compute the distances between the two sets of vertical eye landmarks (x, y)-coordinates
@@ -21,7 +29,7 @@ def calculate_ear(eye):
 def check_sunglasses(frame, eye_points):
     # Crop eye regions from the frame
     eye_regions = [frame[int(min(eye[:, 1])):int(max(eye[:, 1])), int(min(eye[:, 0])):int(max(eye[:, 0]))] for eye in eye_points]
-    darkness_threshold = 40  # Threshold for average pixel intensity that might indicate sunglasses, needs tuning
+    darkness_threshold = 20  # Threshold for average pixel intensity that might indicate sunglasses, needs tuning
     
     for region in eye_regions:
         if region.size == 0:  # Avoid division by zero
@@ -49,6 +57,7 @@ while True:
     # Convert the BGR image to RGB and process it with MediaPipe
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     results = face_mesh.process(rgb_frame)
+    sunglasses_detected = False
 
     if results.multi_face_landmarks:
         for face_landmarks in results.multi_face_landmarks:
@@ -82,10 +91,13 @@ while True:
             # Check if the eyes have been closed for more than the drowsy threshold
                 if drowsy_start and (time.time() - drowsy_start) > drowsy_threshold:
                     cv2.putText(frame, "DROWSY", (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                     #Start a new thread to play the warning sound
+                    sound_thread = threading.Thread(target=play_warning_sound, args=(sound_file_path,))
+                    sound_thread.start()
                 else:
                     cv2.putText(frame, "AWAKE", (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-
-            cv2.imshow('Frame', frame)
+            flipped_frame = cv2.flip(frame, 1)
+            cv2.imshow('Frame', flipped_frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
