@@ -8,6 +8,8 @@ import threading
 
 # Construct the path to the sound file
 sound_file_path = os.path.join(os.path.dirname(__file__), 'sounds', 'ala.wav')
+video_file_path = os.path.join(os.path.dirname(__file__), 'sounds', 'eye_vid.mp4')
+pic = os.path.join(os.path.dirname(__file__), 'sounds', 'drowsy.jpg')
 def play_warning_sound(sound_path):
     playsound(sound_path)
 
@@ -29,17 +31,20 @@ def calculate_ear(eye):
 def check_sunglasses(frame, eye_points):
     # Crop eye regions from the frame
     eye_regions = [frame[int(min(eye[:, 1])):int(max(eye[:, 1])), int(min(eye[:, 0])):int(max(eye[:, 0]))] for eye in eye_points]
-    darkness_threshold = 20  # Threshold for average pixel intensity that might indicate sunglasses, needs tuning
     
+    darkness_threshold = 45  # Threshold for average pixel intensity that might indicate sunglasses, needs tuning
+   
     for region in eye_regions:
         if region.size == 0:  # Avoid division by zero
             continue
         if np.mean(region) < darkness_threshold:
+            print("Average brightness in eye region:", np.mean(region))
             return True  # Likely wearing sunglasses
+        
     return False
 
 # Start capturing video from the webcam
-cap = cv2.VideoCapture(0)
+cap = cv2.imread(video_file_path)
 
 drowsy_start = None  # Timer to start counting when eyes close
 drowsy_threshold = 1  # Threshold in seconds for drowsiness
@@ -96,8 +101,8 @@ while True:
                     sound_thread.start()
                 else:
                     cv2.putText(frame, "AWAKE", (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            flipped_frame = cv2.flip(frame, 1)
-            cv2.imshow('Frame', flipped_frame)
+            
+            cv2.imshow('Frame', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
