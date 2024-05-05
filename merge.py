@@ -7,6 +7,17 @@ from playsound import playsound
 import os
 import threading
 
+import ui
+
+
+
+
+
+
+
+
+
+
 
 # Construct the path to the sound file
 sound_file_path = os.path.join(os.path.dirname(__file__), 'sounds', 'ala.wav')
@@ -89,7 +100,7 @@ class WheelDetector:
         contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         contours = sorted(contours, key=cv2.contourArea, reverse=True)
         
-        print("Searching for new ellipse. Current time:", current_time)
+        #print("Searching for new ellipse. Current time:", current_time)
         for contour in contours:
             if len(contour) >= 5:
                 ellipse = cv2.fitEllipse(contour)
@@ -99,10 +110,10 @@ class WheelDetector:
                 minor_axis = min(axes)
                 aspect_ratio = major_axis / minor_axis
                 
-                print(f"Ellipse: Center={center}, Axes={axes}, Orientation={orientation}, Aspect Ratio={aspect_ratio}")  # Debugging output
+                #print(f"Ellipse: Center={center}, Axes={axes}, Orientation={orientation}, Aspect Ratio={aspect_ratio}")  # Debugging output
                 
                 if aspect_ratio > 1.0 and major_axis > h / 4:
-                    print(f"New ellipse detected: Center={center}, Axes={axes}, Orientation={orientation}")
+                    #print(f"New ellipse detected: Center={center}, Axes={axes}, Orientation={orientation}")
                     corrected_center = (int(center[0])-10, int(center[1] + h//2+40))
                     corrected_axes = (max(axes)//1.2,max(axes))
                     self.stable_ellipse = (corrected_center, corrected_axes, orientation)
@@ -174,7 +185,7 @@ class DrowsinessDetector:
             if region.size == 0:  # Avoid division by zero
                 continue
             if np.mean(region) < darkness_threshold:
-                print("Average brightness in eye region:", np.mean(region))
+                #print("Average brightness in eye region:", np.mean(region))
                 return True  # Likely wearing sunglasses
             
         return False
@@ -226,7 +237,7 @@ def main():
         elif warning_triggered:
             cv2.putText(image, "HANDS ARE OFF THE WHEEL", (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
         
-        print("Hands on wheel:", hands_on_wheel)
+        #print("Hands on wheel:", hands_on_wheel)
         if results.multi_face_landmarks:
             for face_landmarks in results.multi_face_landmarks:
                 lh_indices = [362, 385, 387, 263, 373, 380]  # Update with correct indices
@@ -265,11 +276,15 @@ def main():
                     else:
                         cv2.putText(image, "AWAKE", (50, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         
-
+        example_variable_1 = ui.main().example[0]
+        example_variable_2 = ui.main().example[1]
+        print(example_variable_1 ,example_variable_2)
         cv2.imshow("Video", image)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             stop_sound_event.set()
             break
+        
+
 
     cap.release()
     cv2.destroyAllWindows()
