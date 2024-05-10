@@ -14,6 +14,25 @@ video_file_path = os.path.join(os.path.dirname(__file__), 'sounds', 'vid.mp4')
 def play_warning_sound(sound_path,stop_event):
     while not stop_event.is_set():
         playsound(sound_path) 
+def my_variables():
+    with open('hand.txt', 'r') as file:
+        hand = int(file.read())
+        print("hand ->", hand)
+    
+    with open('face.txt', 'r') as file:
+        face = int(file.read())
+        print("face ->", face)
+    
+    return hand, face
+
+"""def record_video(file_number):
+    fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')  # You can also use 'MP4V' or 'MJPG'
+    switch_time = 3600 
+    start_time = time.time()
+    out = cv2.VideoWriter(f'output{file_number}.mp4', fourcc, 60.0, (640, 480))
+    return out, switch_time, start_time"""
+
+
 
 class handTracker():
     def __init__(self, mode=False, maxHands=2, detectionCon=0.5,modelComplexity=1,trackCon=0.5):
@@ -180,7 +199,7 @@ class DrowsinessDetector:
         return False
 
 def main():
-    cap = cv2.VideoCapture(video_file_path)
+    cap = cv2.VideoCapture(0)
     tracker = handTracker()
     wheel_detector = WheelDetector()
     eye_detector = DrowsinessDetector()
@@ -189,12 +208,23 @@ def main():
     warning_sound_thread = None
     stop_sound_event = threading.Event()
     
+    """file_number = 1
+    record = record_video(file_number)"""""
+    
 
     while True:
         success, image = cap.read()
         if not success:
             break
-
+        
+        """record[0].write(image)
+        if (time.time() - record[2]) >= record[1]:
+            Release the current VideoWriter
+            record[0].release()
+            file_number = 2 if file_number == 1 else 1
+            record = record_video(file_number)"""
+            
+        ui = my_variables()    
         image = tracker.handsFinder(image)
         current_time = time.time()
         wheel_circle = wheel_detector.detect_wheel(image, current_time)
@@ -205,6 +235,7 @@ def main():
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         results = eye_detector.face_mesh.process(rgb_image)
         sunglasses_detected = False
+        
         if hands_on_wheel:
             
             hands_last_detected_time = updated_time
@@ -214,7 +245,7 @@ def main():
         else:
             if hands_last_detected_time and (current_time - hands_last_detected_time > 3) and not warning_triggered:
                 
-                if warning_sound_thread is None or not warning_sound_thread.is_alive():
+                if warning_sound_thread is None or not warning_sound_thread.is_alive() and (ui[0] == 1):
                     stop_sound_event.clear()
                     warning_sound_thread = threading.Thread(target=play_warning_sound, args=(sound_file_path, stop_sound_event))
                     warning_sound_thread.start()
@@ -226,7 +257,7 @@ def main():
         elif warning_triggered:
             cv2.putText(image, "HANDS ARE OFF THE WHEEL", (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
         
-        print("Hands on wheel:", hands_on_wheel)
+        #print("Hands on wheel:", hands_on_wheel)
         if results.multi_face_landmarks:
             for face_landmarks in results.multi_face_landmarks:
                 lh_indices = [362, 385, 387, 263, 373, 380]  # Update with correct indices
@@ -260,8 +291,9 @@ def main():
                     if drowsy_start and (time.time() - drowsy_start) > eye_detector.drowsy_threshold:
                         cv2.putText(image, "DROWSY", (50, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
                         #Start a new thread to play the warning sound
-                        sound_thread = threading.Thread(target=play_warning_sound, args=(sound_file_path,))
-                        sound_thread.start()
+                        if (ui[1] == 1):
+                            sound_thread = threading.Thread(target=play_warning_sound, args=(sound_file_path,stop_sound_event))
+                            sound_thread.start()
                     else:
                         cv2.putText(image, "AWAKE", (50, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         
