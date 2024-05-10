@@ -5,7 +5,6 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout,
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QImage, QPixmap
 
-
 class LaneDetection:
     def __init__(self):
         self.prev_left_avg_line = None
@@ -13,6 +12,7 @@ class LaneDetection:
         self.sol_flag = False  # Initialize sol_flag here
 
     def find_lane_lines(self, img):
+
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         height, width = img.shape[:2]
@@ -63,6 +63,8 @@ class LaneDetection:
         line_start_x = (width - line_length) // 2
         line_end_x = line_start_x + line_length
         cv2.line(img, (line_start_x, roi_height), (line_end_x, roi_height), (0, 0, 255), line_thickness)
+        cv2.line(img, (450, 500), (50, 40), (0, 0, 255), line_thickness)
+
 
         # ROI sınırlarını güncelle
         if left_avg_line is not None and right_avg_line is not None:
@@ -71,6 +73,12 @@ class LaneDetection:
             roi_height = min_y
             height = max_y
 
+
+        if left_avg_line is not None and right_avg_line is not None:
+            self.detect_crossing(left_avg_line, right_avg_line)
+            self.prev_left_avg_line = left_avg_line
+            self.prev_right_avg_line = right_avg_line
+            
         roi = gray[roi_height:height, gap:width - gap]
 
         self.prev_left_avg_line = left_avg_line
@@ -85,7 +93,6 @@ class LaneDetection:
             
             my_rx1 = current_right_avg_line[0]
             my_rx2 = current_right_avg_line[2]
-            eda =1 
                 
             if my_lx1 <= 30 and my_lx2 != 0 and my_rx2 > 1000:
                 if not self.sol_flag:
@@ -100,6 +107,7 @@ class LaneDetection:
                     print("rx2:", my_rx2)
                     self.sol_flag = False 
 
+
 class EdaWrite:
     @staticmethod
     def edaa(img):
@@ -109,9 +117,10 @@ class EdaWrite:
         return img
 
 class VideoPlayer(QMainWindow):
+
     def __init__(self, video_file):
         super().__init__()
-
+        
         self.video_file = video_file
         self.cap = cv2.VideoCapture(video_file)
         self.timer = QTimer()
@@ -129,40 +138,35 @@ class VideoPlayer(QMainWindow):
         self.eda_checkbox = QCheckBox("Ekrana Yazma")
         self.layout.addWidget(self.eda_checkbox)
         
-        self.variable_1_checkbox = QCheckBox("Example Variable 1")
-        self.layout.addWidget(self.variable_1_checkbox)
+        self.face_checkbox = QCheckBox("face")
+        self.layout.addWidget(self.face_checkbox)
         
-        self.variable_2_checkbox = QCheckBox("Example Variable 2")
-        self.layout.addWidget(self.variable_2_checkbox)
+        self.hand_checkbox = QCheckBox("hand")
+        self.layout.addWidget(self.hand_checkbox)
         
-
+        self.traffic_lights_checkbox = QCheckBox("traffic lights")
+        self.layout.addWidget(self.traffic_lights_checkbox)
+        
+        self.traffic_signs_checkbox = QCheckBox("traffic signs")
+        self.layout.addWidget(self.traffic_signs_checkbox)
+        
         self.video_label = QLabel()
         self.layout.addWidget(self.video_label)
 
         self.start_button = QPushButton("Başlat")
         self.start_button.clicked.connect(self.start_video)
         self.layout.addWidget(self.start_button)
+        self.lane_detection = LaneDetection()
+        self.timer = QTimer()
 
-    def start_video(self):
         self.timer.timeout.connect(self.update_frame)
+    def start_video(self):
+        self.cap = cv2.VideoCapture(self.video_file)
         self.timer.start(30)
         self.start_button.setEnabled(False)
-        
-    def func(self):
-        example_variable_1 = 3
-        example_variable_2 = 3
-    
-        if self.variable_1_checkbox.isChecked():
-            example_variable_1 = 1
-
-        if self.variable_2_checkbox.isChecked():
-            example_variable_2 = 1
-        
-        return example_variable_1, example_variable_2
     def update_frame(self):
-
-
         ret, frame = self.cap.read()
+
         if not ret:
             self.timer.stop()
             self.cap.release()
@@ -174,34 +178,43 @@ class VideoPlayer(QMainWindow):
 
         if self.eda_checkbox.isChecked():
             frame = self.eda_write.edaa(frame)
-            
+        
+        if self.hand_checkbox.isChecked():
+            hand = "1"
+            print("hand 1 oldu canim")
+        else:
+             hand = "0"
+             print("hand 0 oldu canim")
 
+        with open('hand.txt', 'w') as file:
+            file.write(hand)
+               
+        if self.face_checkbox.isChecked():
+            face = "1"
+            print("face 1 oldu ")
+        else:
+            face = "0"
+            print("face 0 oldu")
+        with open('face.txt', 'w') as file:
+            file.write(face)
 
-
-
+        
 
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         h, w, ch = frame.shape
         bytes_per_line = ch * w
         q_img = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888)
         self.video_label.setPixmap(QPixmap.fromImage(q_img))
-
     
 
+        
 
-
-def main():
-       
-    app = QApplication(sys.argv)
-    video_file = '/Users/edanurpotuk/Downloads/ADAS-main/sounds/vid.mp4'
-    player = VideoPlayer(video_file)
-    player.setGeometry(100, 100, 800, 600)
-    example = player.func()
-
-    player.show()
-    sys.exit(app.exec_()) 
 
 if __name__ == "__main__":
-    
-    main()
+    app = QApplication(sys.argv)
+    video_file = '/Users/edanurpotuk/Desktop/gui/ADAS-main/g.mp4'
+    player = VideoPlayer(video_file)
+    player.setGeometry(100, 100, 800, 600)
+    player.show()
+    sys.exit(app.exec_())
 
