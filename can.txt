@@ -1,0 +1,92 @@
+Get data from ID: 0x38D
+
+0	0	17	B5	AF	2A	46	
+
+
+
+
+Get data from ID: 0x38D
+
+0	0	17	B5	AF	2A	46	
+
+
+
+
+Get data from ID: 0x38D
+
+0	0	17	B5	AF	2A	46	
+
+
+
+
+
+Get data from ID: 0x38D
+
+0	0	17	B5	AF	2A	46	
+
+
+
+
+Get data from ID: 0x38D
+
+0	0	17	B5	AF	39	46	
+
+
+
+
+
+Get data from ID: 0x38D
+
+3	27	17	C3	C5	3A	15	
+
+
+
+
+Get data from ID: 0x38D
+
+5	47	17	EA	BA	48	15	
+
+
+
+
+Get data from ID: 0x38D
+
+7	2C	18	20	BC	46	15	
+
+
+
+Get data from ID: 0x38D
+
+8	21	18	67	B3	5D	15	
+
+
+
+
+Get data from ID: 0x38D
+
+7	EA	18	B1	A8	65	15	
+
+
+
+
+Get data from ID: 0x38D
+
+5	D9	18	EE	9D	65	15	
+
+
+
+
+
+Get data from ID: 0x38D
+
+2	C	19	F	95	75	15	
+
+
+
+
+
+Get data from ID: 0x38D
+
+0	0	19	14	A9	73	56	
+
+
