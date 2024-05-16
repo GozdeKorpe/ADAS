@@ -183,7 +183,6 @@ class LaneDetector:
             if (my_rx2 + 210 - self.car_m_point[0]) > 400:
                 if self.sag_flag:
                     print("Düzeldi")
-                    #self.play_audio('fixed.wav')
                     #print("rx1:", my_rx1)
                     #print("rx2:", my_rx2)
                     self.sag_flag = False 
@@ -195,7 +194,6 @@ class LaneDetector:
             if (self.car_m_point[0] - (my_lx1 + 210) ) > 120:
                 if self.sol_flag:
                     print("Düzeldi")
-                    #self.play_audio('fixed.wav')
                     self.sol_flag = False 
 
 def main():
