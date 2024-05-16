@@ -7,9 +7,12 @@ import serial
 import playsound
 
 file = os.path.join(os.path.dirname(__file__), 'can.txt')
-ser = serial.Serial('COM11', 750)  # Adjust COM port as necessary
+lanetxt = os.path.join(os.path.dirname(__file__), 'lane.txt')
+sound_file_path = os.path.join(os.path.dirname(__file__), 'alert.wav')
+video_file_path = os.path.join(os.path.dirname(__file__),  'eee.mp4')
+#ser = serial.Serial('COM11', 750)  # Adjust COM port as necessary
 time.sleep(2)  # Wait for the connection to stabilize
-ser.flushInput()
+#ser.flushInput()
 
 def play_warning_sound(sound_path,stop_event):
     while not stop_event.is_set():
@@ -24,7 +27,7 @@ def record_video(file_number):
 
 def my_variables():
     try:
-        with open('lane.txt', 'r') as file:
+        with open(lanetxt, 'r') as file:
             lane = int(file.read())
             print("Lane ->", lane)
     except ValueError:
@@ -108,6 +111,7 @@ class LaneDetector:
         self.car_l_point = (614, 809)    #arabanin sol noktasi
         self.sol_flag = False
         self.sag_flag = False
+        self.warning_sound_thread = None
 
         # Initialize pygame sound mixer
 
@@ -115,7 +119,6 @@ class LaneDetector:
 
     def find_lane_lines(self, img):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
         height, width = img.shape[:2]
         roi_height = int(height * 0.6)
         roi_width = int(width * 0.6)
@@ -141,19 +144,21 @@ class LaneDetector:
 
         left_avg_line = np.mean(left_lines, axis=0, dtype=np.int32) if left_lines else self.prev_left_avg_line
         right_avg_line = np.mean(right_lines, axis=0, dtype=np.int32) if right_lines else self.prev_right_avg_line
-
+        
         if left_avg_line is not None and right_avg_line is not None:
             left_x1, left_y1, left_x2, left_y2 = left_avg_line
             right_x1, right_y1, right_x2, right_y2 = right_avg_line
             
             # Draw lanes based on default values while drawing lanes
             if self.sag_flag == False and self.sol_flag == False and my_variables() == 1:
+                
                 cv2.circle(img, (25, 460), 10, (0, 255, 0), 1)
                 cv2.line(img, (left_x1 + gap, left_y1 + roi_height), (left_x2 + gap, left_y2 + roi_height), (0, 255, 255), 3)
                 cv2.line(img, (right_x1 + gap, right_y1 + roi_height), (right_x2 + gap, right_y2 + roi_height), (0, 255, 255), 3)
 
             # Fill the area between lanes with green
             if self.sag_flag == False and self.sol_flag == False and (my_variables() == 1):
+                print("lane girdiiiii")
                 pts = np.array([[right_x1 + gap, right_y1 + roi_height],
                             [right_x2 + gap, right_y2 + roi_height],
                             [left_x1 + gap, left_y1 + roi_height], 
@@ -164,7 +169,7 @@ class LaneDetector:
 
         return img, left_avg_line, right_avg_line
 
-    def detect_crossing(self, current_left_avg_line, current_right_avg_line):
+    def detect_crossing(self, current_left_avg_line, current_right_avg_line,stop_sound):
         if self.prev_left_avg_line is not None and self.prev_right_avg_line is not None:
             my_lx1 = current_left_avg_line[0]
             my_lx2 = current_left_avg_line[2]
@@ -176,30 +181,46 @@ class LaneDetector:
             if (my_rx2 + 210 - self.car_m_point[0]) < 100:  #210 gap
                 if not self.sol_flag:
                     print("saga geçildi")
+                    self.sag_flag = True
                     #print("rx1:", my_rx1)
                     #print("rx2:", my_rx2)
-                    self.play_audio('alert.wav')
-                    self.sag_flag = True  
+                    """if self.warning_sound_thread is None or not self.warning_sound_thread.is_alive():
+                        stop_sound.clear()
+                        sound_thread = threading.Thread(target=play_warning_sound, args=(sound_file_path,stop_sound))
+                        sound_thread.start()
+                        print("ses")"""
+                      
             if (my_rx2 + 210 - self.car_m_point[0]) > 400:
                 if self.sag_flag:
                     print("Düzeldi")
+                    self.sag_flag = False
+                    """if self.warning_sound_thread is not None:
+                        stop_sound.set()"""
                     #print("rx1:", my_rx1)
                     #print("rx2:", my_rx2)
-                    self.sag_flag = False 
+                     
             if (self.car_m_point[0] - (my_lx1 +210) ) < 120:  #210 gap
                 if not self.sol_flag:
                     print("sola geçildi")
-                    self.play_audio('alert.wav')
-                    self.sol_flag = True  
+                    self.sol_flag = True 
+                    """if self.warning_sound_thread is None or not self.warning_sound_thread.is_alive():
+                        stop_sound.clear()
+                        sound_thread = threading.Thread(target=play_warning_sound, args=(sound_file_path,stop_sound))
+                        sound_thread.start()
+                        print("ses")"""
+                     
             if (self.car_m_point[0] - (my_lx1 + 210) ) > 120:
                 if self.sol_flag:
                     print("Düzeldi")
-                    self.sol_flag = False 
+                    self.sol_flag = False
+                    """if self.warning_sound_thread is not None:
+                        stop_sound.set()"""
+                     
 
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(video_file_path)
     ret, frame = cap.read()
-    
+    stop_sound = threading.Event()
     file_number = 1
     record = record_video(file_number)
     record_processed = record_video(3)
@@ -222,7 +243,7 @@ def main():
         
         frame_with_lanes, current_left_avg_line, current_right_avg_line = lane_detector.find_lane_lines(frame)
         if current_left_avg_line is not None and current_right_avg_line is not None:
-            lane_detector.detect_crossing(current_left_avg_line, current_right_avg_line)
+            lane_detector.detect_crossing(current_left_avg_line, current_right_avg_line,stop_sound)
             lane_detector.prev_left_avg_line = current_left_avg_line
             lane_detector.prev_right_avg_line = current_right_avg_line
         record_processed[0].write(frame_with_lanes)
