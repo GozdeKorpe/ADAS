@@ -3,8 +3,12 @@ import numpy as np
 import time
 import threading
 import os
+import serial
 
 file = os.path.join(os.path.dirname(__file__), 'can.txt')
+ser = serial.Serial('COM11', 750)  # Adjust COM port as necessary
+time.sleep(2)  # Wait for the connection to stabilize
+ser.flushInput()
 
 def record_video(file_number):
     fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')  # Use 'mp4v' codec
@@ -55,6 +59,38 @@ def readFileData(filename,  stop_event):
                 time.sleep(1)  # Simulate a delay as if reading from a slow serial port
     except Exception as e:
         print(f"Error in file reading thread: {e}")
+        speed_kmh = 0.01
+
+def canData(ser,  stop_event):
+    #Thread function to read and process data from a file.
+    global speed_kmh
+    try:
+        
+        while not stop_event.is_set():
+                
+            if stop_event.is_set():
+                break
+            line = ser.readline().decode().strip()
+            stripped_line = line.strip()
+            if not stripped_line:
+                    continue
+            if "Get data from ID: 0x38D" in line:
+                next_line = True
+            elif next_line and stripped_line:
+                data = line.strip().split()
+                    
+                    
+                if len(data) >= 6:
+                    byte1 = data[0]  # Extract Byte 1
+                    byte5 = data[4]  # Extract Byte 2
+                    speed_raw = int(byte1, 16) * 256 + int(byte5, 16)
+                    speed_kmh = (speed_raw * 0.01) 
+                    print(f"Reading line: {line.strip().split()}")
+                    print(byte1, byte5) 
+                    print(speed_kmh)
+                        
+    except Exception as e:
+        print(f"Error in reading thread: {e}")
         speed_kmh = 0.01
 
 class LaneDetector:
