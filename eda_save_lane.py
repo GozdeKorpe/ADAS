@@ -202,6 +202,7 @@ def main():
     
     file_number = 1
     record = record_video(file_number)
+    record_processed = record_video(3)
     lane_detector = LaneDetector()  # Create an instance of LaneDetector class
     stop_event = threading.Event()
     file_thread = threading.Thread(target=readFileData, args=(file,  stop_event))
@@ -224,7 +225,7 @@ def main():
             lane_detector.detect_crossing(current_left_avg_line, current_right_avg_line)
             lane_detector.prev_left_avg_line = current_left_avg_line
             lane_detector.prev_right_avg_line = current_right_avg_line
-        
+        record_processed[0].write(frame_with_lanes)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             stop_event.set()
             break
