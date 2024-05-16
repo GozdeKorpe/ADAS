@@ -1,11 +1,14 @@
 import cv2
 import numpy as np
-import pygame
 import time
+import threading
+import os
+
+file = os.path.join(os.path.dirname(__file__), 'can.txt')
 
 def record_video(file_number):
     fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')  # Use 'mp4v' codec
-    switch_time = 360  # When to switch each video (in seconds)
+    switch_time = 300  # When to switch each video (in seconds)
     start_time = time.time()
     out = cv2.VideoWriter(f'output{file_number}.mp4', fourcc, 40.0, (640, 480))
     return out, switch_time, start_time
@@ -19,6 +22,40 @@ def my_variables():
         print("Value not found in the file.")
         lane = None
     return lane
+def readFileData(filename,  stop_event):
+    #Thread function to read and process data from a file.
+    global speed_kmh
+    try:
+        
+        with open(filename, 'r') as file:
+            for line in file:
+                
+                if stop_event.is_set():
+                    break
+                stripped_line = line.strip()
+                if not stripped_line:
+                    continue
+                if "Get data from ID: 0x38D" in line:
+                    next_line = True
+                elif next_line and stripped_line:
+                    data = line.strip().split()
+                    
+                    
+                    if len(data) >= 6:
+                        byte1 = data[0]  # Extract Byte 1
+                        byte5 = data[4]  # Extract Byte 2
+                        speed_raw = int(byte1, 16) * 256 + int(byte5, 16)
+                        speed_kmh = (speed_raw * 0.01) 
+                        print(f"Reading line: {line.strip().split()}")
+                        print(byte1, byte5) 
+                        print(speed_kmh)
+                        
+                        
+                        
+                time.sleep(1)  # Simulate a delay as if reading from a slow serial port
+    except Exception as e:
+        print(f"Error in file reading thread: {e}")
+        speed_kmh = 0.01
 
 class LaneDetector:
     def __init__(self):
@@ -28,11 +65,8 @@ class LaneDetector:
         self.sag_flag = False
 
         # Initialize pygame sound mixer
-        pygame.mixer.init()
 
-    def play_audio(self, filename):
-        pygame.mixer.music.load(filename)
-        pygame.mixer.music.play()
+
 
     def find_lane_lines(self, img):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -113,6 +147,9 @@ def main():
     file_number = 1
     record = record_video(file_number)
     lane_detector = LaneDetector()  # Create an instance of LaneDetector class
+    stop_event = threading.Event()
+    file_thread = threading.Thread(target=readFileData, args=(file,  stop_event))
+    file_thread.start()
     
     while True:
         ret, frame = cap.read()
@@ -133,10 +170,12 @@ def main():
             lane_detector.prev_right_avg_line = current_right_avg_line
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            stop_event.set()
             break
 
     cap.release()
     cv2.destroyAllWindows()
+    record[0].release()
 
 
 # Example usage
