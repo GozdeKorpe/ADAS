@@ -11,7 +11,7 @@ lanetxt = os.path.join(os.path.dirname(__file__), 'lane.txt')
 sound_file_path = os.path.join(os.path.dirname(__file__), 'sounds', 'ala.wav')
 video_file_path = os.path.join(os.path.dirname(__file__), 'sounds', 'lane2.mp4')
 #ser = serial.Serial('COM11', 750)  # Adjust COM port as necessary
-time.sleep(2)  # Wait for the connection to stabilize
+#time.sleep(2)  
 #ser.flushInput()
 
 def play_warning_sound(sound_path,stop_event):
@@ -179,46 +179,50 @@ class LaneDetector:
             
             
             if (my_rx2 + 210 - self.car_m_point[0]) < 100:  #210 gap
-                if not self.sol_flag:
+                if not self.sol_flag and not warning_triggered:
                     print("saga geçildi")
                     self.sag_flag = True
+                    warning_triggered = True
                     #print("rx1:", my_rx1)
                     #print("rx2:", my_rx2)
-                    """if self.warning_sound_thread is None or not self.warning_sound_thread.is_alive():
+                    if self.warning_sound_thread is None or not self.warning_sound_thread.is_alive():
                         stop_sound.clear()
                         sound_thread = threading.Thread(target=play_warning_sound, args=(sound_file_path,stop_sound))
                         sound_thread.start()
-                        print("ses")"""
+                        
                       
             if (my_rx2 + 210 - self.car_m_point[0]) > 400:
                 if self.sag_flag:
                     print("Düzeldi")
+                    warning_triggered = False
                     self.sag_flag = False
-                    """if self.warning_sound_thread is not None:
-                        stop_sound.set()"""
+                    if self.warning_sound_thread is not None:
+                        stop_sound.set()
                     #print("rx1:", my_rx1)
                     #print("rx2:", my_rx2)
                      
             if (self.car_m_point[0] - (my_lx1 +210) ) < 120:  #210 gap
-                if not self.sol_flag:
+                if not self.sol_flag and not warning_triggered:
                     print("sola geçildi")
                     self.sol_flag = True 
-                    """if self.warning_sound_thread is None or not self.warning_sound_thread.is_alive():
+                    warning_triggered = True
+                    if self.warning_sound_thread is None or not self.warning_sound_thread.is_alive():
                         stop_sound.clear()
                         sound_thread = threading.Thread(target=play_warning_sound, args=(sound_file_path,stop_sound))
                         sound_thread.start()
-                        print("ses")"""
+                        
                      
             if (self.car_m_point[0] - (my_lx1 + 210) ) > 120:
                 if self.sol_flag:
                     print("Düzeldi")
+                    warning_triggered = False
                     self.sol_flag = False
-                    """if self.warning_sound_thread is not None:
-                        stop_sound.set()"""
+                    if self.warning_sound_thread is not None:
+                        stop_sound.set()
                      
 
 def main():
-    cap = cv2.VideoCapture(video_file_path)
+    cap = cv2.VideoCapture(0)
     ret, frame = cap.read()
     stop_sound = threading.Event()
     file_number = 1
