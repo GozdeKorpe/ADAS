@@ -273,7 +273,9 @@ class DrowsinessDetector:
         return False
 
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH,640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 420)
     tracker = handTracker()
     wheel_detector = WheelDetector()
     eye_detector = DrowsinessDetector()
