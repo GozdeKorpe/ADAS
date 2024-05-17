@@ -15,9 +15,9 @@ sound_eye_path = os.path.join(os.path.dirname(__file__), 'sounds', 'eye.wav')
 video_file_path = os.path.join(os.path.dirname(__file__), 'sounds', 'lastvid.mp4')
 file = os.path.join(os.path.dirname(__file__), 'can.txt')
 speed_kmh = 0
-ser = serial.Serial('COM11', 750)  # Adjust COM port as necessary
+"""ser = serial.Serial('COM11', 750)  # Adjust COM port as necessary
 time.sleep(2)  
-ser.flushInput()
+ser.flushInput()"""
 
 """def readFileData(filename,  stop_event):
     #Thread function to read and process data from a file.
@@ -75,7 +75,7 @@ def my_variables():
     start_time = time.time()
     out = cv2.VideoWriter(f'output{file_number}.mp4', fourcc, 60.0, (640, 480))
     return out, switch_time, start_time"""
-def canData(ser,  stop_event):
+"""def canData(ser,  stop_event):
     #Thread function to read and process data from a file.
     global speed_kmh
     try:
@@ -105,7 +105,7 @@ def canData(ser,  stop_event):
                         
     except Exception as e:
         print(f"Error in reading thread: {e}")
-        speed_kmh = 0.01
+        speed_kmh = 0.01"""
 
 
 class handTracker():
@@ -261,7 +261,7 @@ class DrowsinessDetector:
         # Crop eye regions from the image
         eye_regions = [image[int(min(eye[:, 1])):int(max(eye[:, 1])), int(min(eye[:, 0])):int(max(eye[:, 0]))] for eye in eye_points]
         
-        darkness_threshold = 20  # Threshold for average pixel intensity that might indicate sunglasses, needs tuning
+        darkness_threshold = 10  # Threshold for average pixel intensity that might indicate sunglasses, needs tuning
     
         for region in eye_regions:
             if region.size == 0:  # Avoid division by zero
@@ -284,8 +284,8 @@ def main():
     stop_sound_event = threading.Event()
     stop_eye_sound = threading.Event()
     stop_event = threading.Event()  # Event to signal the thread to stop
-    file_thread = threading.Thread(target=canData, args=(file,  stop_event))
-    file_thread.start()
+    #file_thread = threading.Thread(target=canData, args=(file,  stop_event))
+    #file_thread.start()
     
     
     """file_number = 1
@@ -393,7 +393,7 @@ def main():
         if cv2.waitKey(1) & 0xFF == ord('q'):
               # Tell the thread to stop
             stop_event.set()
-            file_thread.join()
+            #file_thread.join()
             stop_sound_event.set()
             stop_eye_sound.set()
             break
