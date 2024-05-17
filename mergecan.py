@@ -6,22 +6,66 @@ import time
 from playsound import playsound
 import os
 import threading
+import serial
 
 
 # Construct the path to the sound file
 sound_file_path = os.path.join(os.path.dirname(__file__), 'sounds', 'ala.wav')
+sound_eye_path = os.path.join(os.path.dirname(__file__), 'sounds', 'eye.wav')
 video_file_path = os.path.join(os.path.dirname(__file__), 'sounds', 'lastvid.mp4')
+file = os.path.join(os.path.dirname(__file__), 'can.txt')
+speed_kmh = 0
+ser = serial.Serial('COM11', 750)  # Adjust COM port as necessary
+time.sleep(2)  
+ser.flushInput()
+
+"""def readFileData(filename,  stop_event):
+    #Thread function to read and process data from a file.
+    global speed_kmh
+    try:
+        
+        with open(filename, 'r') as file:
+            for line in file:
+                
+                if stop_event.is_set():
+                    break
+                stripped_line = line.strip()
+                if not stripped_line:
+                    continue
+                if "Get data from ID: 0x38D" in line:
+                    next_line = True
+                elif next_line and stripped_line:
+                    data = line.strip().split()
+                    
+                    
+                    if len(data) >= 6:
+                        byte1 = data[0]  # Extract Byte 1
+                        byte5 = data[4]  # Extract Byte 2
+                        speed_raw = int(byte1, 16) * 256 + int(byte5, 16)
+                        speed_kmh = (speed_raw * 0.01) 
+                        print(f"Reading line: {line.strip().split()}")
+                        print(byte1, byte5) 
+                        print(speed_kmh)
+                        time.sleep(1)
+                        
+                        
+                time.sleep(1)  # Simulate a delay as if reading from a slow serial port
+    except Exception as e:
+        print(f"Error in file reading thread: {e}")
+        speed_kmh = 0.01 """
+
 def play_warning_sound(sound_path,stop_event):
     while not stop_event.is_set():
         playsound(sound_path) 
+
 def my_variables():
     with open('hand.txt', 'r') as file:
         hand = int(file.read())
-        print("hand ->", hand)
+        
     
     with open('face.txt', 'r') as file:
         face = int(file.read())
-        print("face ->", face)
+        
     
     return hand, face
 
@@ -31,7 +75,37 @@ def my_variables():
     start_time = time.time()
     out = cv2.VideoWriter(f'output{file_number}.mp4', fourcc, 60.0, (640, 480))
     return out, switch_time, start_time"""
-
+def canData(ser,  stop_event):
+    #Thread function to read and process data from a file.
+    global speed_kmh
+    try:
+        
+        while not stop_event.is_set():
+                
+            if stop_event.is_set():
+                break
+            line = ser.readline().decode().strip()
+            stripped_line = line.strip()
+            if not stripped_line:
+                    continue
+            if "Get data from ID: 0x38D" in line:
+                next_line = True
+            elif next_line and stripped_line:
+                data = line.strip().split()
+                    
+                    
+                if len(data) >= 6:
+                    byte1 = data[0]  # Extract Byte 1
+                    byte5 = data[4]  # Extract Byte 2
+                    speed_raw = int(byte1, 16) * 256 + int(byte5, 16)
+                    speed_kmh = (speed_raw * 0.01) 
+                    print(f"Reading line: {line.strip().split()}")
+                    print(byte1, byte5) 
+                    print(speed_kmh)
+                        
+    except Exception as e:
+        print(f"Error in reading thread: {e}")
+        speed_kmh = 0.01
 
 
 class handTracker():
@@ -199,14 +273,20 @@ class DrowsinessDetector:
         return False
 
 def main():
-    cap = cv2.VideoCapture(video_file_path)
+    cap = cv2.VideoCapture(0)
     tracker = handTracker()
     wheel_detector = WheelDetector()
     eye_detector = DrowsinessDetector()
     hands_last_detected_time = None
     warning_triggered = False
     warning_sound_thread = None
+    sound_thread = None
     stop_sound_event = threading.Event()
+    stop_eye_sound = threading.Event()
+    stop_event = threading.Event()  # Event to signal the thread to stop
+    file_thread = threading.Thread(target=canData, args=(file,  stop_event))
+    file_thread.start()
+    
     
     """file_number = 1
     record = record_video(file_number)"""""
@@ -223,7 +303,7 @@ def main():
             record[0].release()
             file_number = 2 if file_number == 1 else 1
             record = record_video(file_number)"""
-            
+           
         ui = my_variables()    
         image = tracker.handsFinder(image)
         current_time = time.time()
@@ -235,6 +315,8 @@ def main():
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         results = eye_detector.face_mesh.process(rgb_image)
         sunglasses_detected = False
+        
+       
         
         if hands_on_wheel:
             
@@ -291,18 +373,31 @@ def main():
                     if drowsy_start and (time.time() - drowsy_start) > eye_detector.drowsy_threshold:
                         cv2.putText(image, "DROWSY", (50, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
                         #Start a new thread to play the warning sound
-                        if (ui[1] == 1):
-                            sound_thread = threading.Thread(target=play_warning_sound, args=(sound_file_path,stop_sound_event))
+                        if sound_thread is None or not sound_thread.is_alive() and (ui[1] == 1):
+                            stop_eye_sound.clear()
+                            sound_thread = threading.Thread(target=play_warning_sound, args=(sound_eye_path,stop_eye_sound))
                             sound_thread.start()
                     else:
                         cv2.putText(image, "AWAKE", (50, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                        if sound_thread is not None:
+                
+                            stop_eye_sound.set()
         
+            
+
+         
 
         cv2.imshow("Video", image)
+        
+        print("-------",speed_kmh)
         if cv2.waitKey(1) & 0xFF == ord('q'):
+              # Tell the thread to stop
+            stop_event.set()
+            file_thread.join()
             stop_sound_event.set()
+            stop_eye_sound.set()
             break
-
+    
     cap.release()
     cv2.destroyAllWindows()
     
