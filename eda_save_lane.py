@@ -5,15 +5,21 @@ import threading
 import os
 import serial
 import playsound
+import pygame
 
 file = os.path.join(os.path.dirname(__file__), 'can.txt')
 lanetxt = os.path.join(os.path.dirname(__file__), 'lane.txt')
 sound_file_path = os.path.join(os.path.dirname(__file__), 'alert.wav')
-video_file_path = os.path.join(os.path.dirname(__file__),  'eee.mp4')
+video_file_path = os.path.join(os.path.dirname(__file__),'eee_short.mp4')
 #ser = serial.Serial('COM11', 750)  # Adjust COM port as necessary
-time.sleep(2)  # Wait for the connection to stabilize
+#time.sleep(2)  
 #ser.flushInput()
 
+
+def play_audio(self, filename):
+        pygame.mixer.music.load(filename)
+        pygame.mixer.music.play()
+        
 def play_warning_sound(sound_path,stop_event):
     while not stop_event.is_set():
         playsound(sound_path) 
@@ -112,6 +118,7 @@ class LaneDetector:
         self.sol_flag = False
         self.sag_flag = False
         self.warning_sound_thread = None
+        self.warning_triggered = False
 
         # Initialize pygame sound mixer
 
@@ -179,20 +186,23 @@ class LaneDetector:
             
             
             if (my_rx2 + 210 - self.car_m_point[0]) < 100:  #210 gap
-                if not self.sol_flag:
+                if not self.sol_flag and not self.warning_triggered:
                     print("saga geçildi")
                     self.sag_flag = True
+                    self.warning_triggered = True
+                    self.play_audio('alert.wav')
                     #print("rx1:", my_rx1)
                     #print("rx2:", my_rx2)
                     """if self.warning_sound_thread is None or not self.warning_sound_thread.is_alive():
                         stop_sound.clear()
                         sound_thread = threading.Thread(target=play_warning_sound, args=(sound_file_path,stop_sound))
-                        sound_thread.start()
-                        print("ses")"""
+                        sound_thread.start()"""
+                        
                       
             if (my_rx2 + 210 - self.car_m_point[0]) > 400:
                 if self.sag_flag:
                     print("Düzeldi")
+                    self.warning_triggered = False
                     self.sag_flag = False
                     """if self.warning_sound_thread is not None:
                         stop_sound.set()"""
@@ -200,18 +210,21 @@ class LaneDetector:
                     #print("rx2:", my_rx2)
                      
             if (self.car_m_point[0] - (my_lx1 +210) ) < 120:  #210 gap
-                if not self.sol_flag:
+                if not self.sol_flag and not self.warning_triggered:
                     print("sola geçildi")
                     self.sol_flag = True 
+                    self.warning_triggered = True
+                    self.play_audio('alert.wav')
                     """if self.warning_sound_thread is None or not self.warning_sound_thread.is_alive():
                         stop_sound.clear()
                         sound_thread = threading.Thread(target=play_warning_sound, args=(sound_file_path,stop_sound))
-                        sound_thread.start()
-                        print("ses")"""
+                        sound_thread.start()"""
+                        
                      
             if (self.car_m_point[0] - (my_lx1 + 210) ) > 120:
                 if self.sol_flag:
                     print("Düzeldi")
+                    self.warning_triggered = False
                     self.sol_flag = False
                     """if self.warning_sound_thread is not None:
                         stop_sound.set()"""
