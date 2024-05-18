@@ -71,7 +71,7 @@ class UI(tk.Tk):
         self.disable_all_checkbox.bind("<Button-1>", lambda event, checkbox=self.disable_all_checkbox: self.change_text_color(checkbox))
 
         # Add a warning label at the bottom
-        self.warning_label = tk.Label(self, text="ATTENTION!\nAudio alerts will be provided based on selected features.", font=("Arial", 20, "bold"), fg="red", bg="light blue")
+        self.warning_label = tk.Label(self, text="ATTENTION!\nAudio alerts will be provided based on selected features.\nWhile the system is running, it may not provide %100 accurate results; errors can occur.", font=("Arial", 20, "bold"), fg="red", bg="light blue")
         self.warning_label.pack(side=tk.BOTTOM, pady=8)
         
         title_label = tk.Label(self, text="B. Aydemir, E.Potuk, G. Körpe, Y.B. Avşar",bg= "light blue", font=("Arial", 10, "bold"), fg="black")
