@@ -6,29 +6,29 @@ import os
 import serial
 import playsound
 import pygame
+import sounddevice as sd
+import simpleaudio as sa
 
 file = os.path.join(os.path.dirname(__file__), 'can.txt')
 lanetxt = os.path.join(os.path.dirname(__file__), 'lane.txt')
-sound_file_path = os.path.join(os.path.dirname(__file__), 'alert.wav')
-video_file_path = os.path.join(os.path.dirname(__file__),'eee_short.mp4')
+sound_file_path = os.path.join(os.path.dirname(__file__), '/home/jetson/Desktop/ADAS/sounds/alert.wav')
+video_file_path = os.path.join(os.path.dirname(__file__),'/home/jetson/inference/jetson-inference/data/networks/sign/video.mp4')
 #ser = serial.Serial('COM11', 750)  # Adjust COM port as necessary
 #time.sleep(2)  
 #ser.flushInput()
 
+def play_sound():
+    wave_obj = sa.WaveObject.from_wave_file(sound_file_path)
+    play_obj = wave_obj.play()
+    #play_obj.wait_done()
 
-def play_audio(self, filename):
-        pygame.mixer.music.load(filename)
-        pygame.mixer.music.play()
-        
-def play_warning_sound(sound_path,stop_event):
-    while not stop_event.is_set():
-        playsound(sound_path) 
+play_obj = play_sound()
         
 def record_video(file_number):
     fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')  # Use 'mp4v' codec
     switch_time = 300  # When to switch each video (in seconds)
     start_time = time.time()
-    out = cv2.VideoWriter(f'output{file_number}.mp4', fourcc, 40.0, (640, 480))
+    out = cv2.VideoWriter(f'output{file_number}.mp4', fourcc, 30.0, (1280, 720))
     return out, switch_time, start_time
 
 def my_variables():
@@ -117,10 +117,7 @@ class LaneDetector:
         self.car_l_point = (614, 809)    #arabanin sol noktasi
         self.sol_flag = False
         self.sag_flag = False
-        self.warning_sound_thread = None
-        self.warning_triggered = False
 
-        # Initialize pygame sound mixer
 
 
 
@@ -159,10 +156,12 @@ class LaneDetector:
             # Draw lanes based on default values while drawing lanes
             if self.sag_flag == False and self.sol_flag == False and my_variables() == 1:
                 
-                cv2.circle(img, (25, 460), 10, (0, 255, 0), 1)
+                #cv2.circle(img, (25, 460), 10, (0, 255, 0), 1)
                 cv2.line(img, (left_x1 + gap, left_y1 + roi_height), (left_x2 + gap, left_y2 + roi_height), (0, 255, 255), 3)
                 cv2.line(img, (right_x1 + gap, right_y1 + roi_height), (right_x2 + gap, right_y2 + roi_height), (0, 255, 255), 3)
-
+                cv2.circle(img, (left_x1 + gap, left_y1 + roi_height), 10, (0, 255, 0), 1)
+                cv2.circle(img, (right_x2 + gap, right_y2 + roi_height), 10, (0, 255, 0), 1)
+                
             # Fill the area between lanes with green
             if self.sag_flag == False and self.sol_flag == False and (my_variables() == 1):
                 print("lane girdiiiii")
@@ -171,12 +170,13 @@ class LaneDetector:
                             [left_x1 + gap, left_y1 + roi_height], 
                             [left_x2 + gap, left_y2 + roi_height]], np.int32)
                 cv2.fillPoly(img, [pts], (158, 125, 99))
+
         
         cv2.imshow('frame', img)
 
         return img, left_avg_line, right_avg_line
 
-    def detect_crossing(self, current_left_avg_line, current_right_avg_line,stop_sound):
+    def detect_crossing(self, current_left_avg_line, current_right_avg_line):
         if self.prev_left_avg_line is not None and self.prev_right_avg_line is not None:
             my_lx1 = current_left_avg_line[0]
             my_lx2 = current_left_avg_line[2]
@@ -186,82 +186,66 @@ class LaneDetector:
             
             
             if (my_rx2 + 210 - self.car_m_point[0]) < 100:  #210 gap
-                if not self.sol_flag and not self.warning_triggered:
+                if not self.sol_flag and (my_variables() == 1):
                     print("saga geçildi")
                     self.sag_flag = True
-                    self.warning_triggered = True
-                    self.play_audio('alert.wav')
-                    #print("rx1:", my_rx1)
-                    #print("rx2:", my_rx2)
-                    """if self.warning_sound_thread is None or not self.warning_sound_thread.is_alive():
-                        stop_sound.clear()
-                        sound_thread = threading.Thread(target=play_warning_sound, args=(sound_file_path,stop_sound))
-                        sound_thread.start()"""
-                        
-                      
+                    play_sound()
+                    #threading.Thread(target = play_warning_sound).start()
+                                   
             if (my_rx2 + 210 - self.car_m_point[0]) > 400:
                 if self.sag_flag:
                     print("Düzeldi")
-                    self.warning_triggered = False
                     self.sag_flag = False
-                    """if self.warning_sound_thread is not None:
-                        stop_sound.set()"""
-                    #print("rx1:", my_rx1)
-                    #print("rx2:", my_rx2)
+
+
                      
             if (self.car_m_point[0] - (my_lx1 +210) ) < 120:  #210 gap
-                if not self.sol_flag and not self.warning_triggered:
+                if not self.sol_flag and (my_variables() == 1):
                     print("sola geçildi")
                     self.sol_flag = True 
-                    self.warning_triggered = True
-                    self.play_audio('alert.wav')
-                    """if self.warning_sound_thread is None or not self.warning_sound_thread.is_alive():
-                        stop_sound.clear()
-                        sound_thread = threading.Thread(target=play_warning_sound, args=(sound_file_path,stop_sound))
-                        sound_thread.start()"""
+                    play_sound()
+                    #threading.Thread(target = play_warning_sound).start()
+
                         
                      
             if (self.car_m_point[0] - (my_lx1 + 210) ) > 120:
                 if self.sol_flag:
                     print("Düzeldi")
-                    self.warning_triggered = False
                     self.sol_flag = False
-                    """if self.warning_sound_thread is not None:
-                        stop_sound.set()"""
+
                      
 
 def main():
-    cap = cv2.VideoCapture(video_file_path)
+    cap = cv2.VideoCapture(1)
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('Y', 'U', 'Y', 'V'))
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH,1280)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     ret, frame = cap.read()
     stop_sound = threading.Event()
     file_number = 1
-    record = record_video(file_number)
+    record = record_video(1)
     record_processed = record_video(3)
     lane_detector = LaneDetector()  # Create an instance of LaneDetector class
-    stop_event = threading.Event()
-    file_thread = threading.Thread(target=readFileData, args=(file,  stop_event))
-    file_thread.start()
-    
+
     while True:
         ret, frame = cap.read()
         if not ret:
             break
         
         record[0].write(frame)
-        if (time.time() - record[2]) >= record[1]:
+        """if (time.time() - record[2]) >= record[1]:
             # Release the current VideoWriter
             record[0].release()
             file_number = 2 if file_number == 1 else 1
-            record = record_video(file_number)
+            record = record_video(file_number)"""
         
         frame_with_lanes, current_left_avg_line, current_right_avg_line = lane_detector.find_lane_lines(frame)
         if current_left_avg_line is not None and current_right_avg_line is not None:
-            lane_detector.detect_crossing(current_left_avg_line, current_right_avg_line,stop_sound)
+            lane_detector.detect_crossing(current_left_avg_line, current_right_avg_line)
             lane_detector.prev_left_avg_line = current_left_avg_line
             lane_detector.prev_right_avg_line = current_right_avg_line
         record_processed[0].write(frame_with_lanes)
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            stop_event.set()
             break
 
     cap.release()
