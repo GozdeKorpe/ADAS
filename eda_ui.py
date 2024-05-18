@@ -21,6 +21,10 @@ class UI(tk.Tk):
         
         title_label = tk.Label(self, text="Driving Assistance System",bg= "light blue", font=("Arial", 15, "bold"), fg="black")
         title_label.pack(pady=0)
+        
+        
+        title_label = tk.Label(self, text="B. Aydemir, E.Potuk, G. Körpe, Y.B. Avşar",bg= "light blue", font=("Arial", 12, "bold"), fg="dark green")
+        title_label.pack(pady=0)
         # Title label
         title_label = tk.Label(self, text="DRIVING ASSISTANCE SYSTEM UI",bg= "light blue", font=("Arial", 33, "bold"), fg="blue")
         title_label.pack(pady=0)
@@ -30,52 +34,52 @@ class UI(tk.Tk):
 
         self.lane_var = tk.IntVar()
         self.lane_checkbox = tk.Checkbutton(self.layout, text="Lane Detection", variable=self.lane_var, command=self.save_data)
-        self.lane_checkbox.config(bg ="light blue" ,font=("Arial", 32), fg="black")
+        self.lane_checkbox.config(bg ="light blue" ,font=("Arial", 30), fg="black")
         self.lane_checkbox.grid(row=0, column=0, sticky=tk.W, padx=50, pady=0)
         self.lane_checkbox.bind("<Button-1>", lambda event, checkbox=self.lane_checkbox: self.change_text_color(checkbox))
 
         self.face_var = tk.IntVar()
         self.face_checkbox = tk.Checkbutton(self.layout, text="Fatigue Detection", variable=self.face_var, command=self.save_data)
-        self.face_checkbox.config(bg ="light blue",font=("Arial", 32), fg="black")
+        self.face_checkbox.config(bg ="light blue",font=("Arial", 30), fg="black")
         self.face_checkbox.grid(row=1, column=0, sticky=tk.W, padx=50, pady=8)
         self.face_checkbox.bind("<Button-1>", lambda event, checkbox=self.face_checkbox: self.change_text_color(checkbox))
 
         self.hand_var = tk.IntVar()
         self.hand_checkbox = tk.Checkbutton(self.layout, text="Hands Off Detection", variable=self.hand_var, command=self.save_data)
-        self.hand_checkbox.config(bg ="light blue",font=("Arial", 32), fg="black")
+        self.hand_checkbox.config(bg ="light blue",font=("Arial", 30), fg="black")
         self.hand_checkbox.grid(row=2, column=0, sticky=tk.W, padx=50, pady=8)
         self.hand_checkbox.bind("<Button-1>", lambda event, checkbox=self.hand_checkbox: self.change_text_color(checkbox))
 
         self.traffic_lights_var = tk.IntVar()
         self.traffic_lights_checkbox = tk.Checkbutton(self.layout, text="Traffic Lights Detection", variable=self.traffic_lights_var, command=self.save_data)
-        self.traffic_lights_checkbox.config(bg ="light blue",font=("Arial", 32), fg="black")
+        self.traffic_lights_checkbox.config(bg ="light blue",font=("Arial", 30), fg="black")
         self.traffic_lights_checkbox.grid(row=3, column=0, sticky=tk.W, padx=50, pady=8)
         self.traffic_lights_checkbox.bind("<Button-1>", lambda event, checkbox=self.traffic_lights_checkbox: self.change_text_color(checkbox))
 
         self.traffic_signs_var = tk.IntVar()
         self.traffic_signs_checkbox = tk.Checkbutton(self.layout, text="Traffic Signs Detection", variable=self.traffic_signs_var, command=self.save_data)
-        self.traffic_signs_checkbox.config(bg ="light blue",font=("Arial", 32), fg="black")
+        self.traffic_signs_checkbox.config(bg ="light blue",font=("Arial", 30), fg="black")
         self.traffic_signs_checkbox.grid(row=4, column=0, sticky=tk.W, padx=50, pady=8)
         self.traffic_signs_checkbox.bind("<Button-1>", lambda event, checkbox=self.traffic_signs_checkbox: self.change_text_color(checkbox))
         
         self.car_pedestrian_var = tk.IntVar()
         self.car_pedestrian_checkbox = tk.Checkbutton(self.layout, text="Car and Pedestrian Detection", variable=self.car_pedestrian_var, command=self.save_data)
-        self.car_pedestrian_checkbox.config(bg ="light blue",font=("Arial", 32), fg="black")
+        self.car_pedestrian_checkbox.config(bg ="light blue",font=("Arial", 30), fg="black")
         self.car_pedestrian_checkbox.grid(row=5, column=0, sticky=tk.W, padx=50, pady=8)
         self.car_pedestrian_checkbox.bind("<Button-1>", lambda event, checkbox=self.car_pedestrian_checkbox: self.change_text_color(checkbox))
         
         self.disable_all_var = tk.IntVar()
         self.disable_all_checkbox = tk.Checkbutton(self.layout, text="Disable All Features", variable=self.disable_all_var, command=self.toggle_disable_all)
-        self.disable_all_checkbox.config(bg ="light blue",font=("Arial", 32), fg="black")
+        self.disable_all_checkbox.config(bg ="light blue",font=("Arial", 30), fg="black")
         self.disable_all_checkbox.grid(row=6, column=0, sticky=tk.W, padx=100, pady=8)
         self.disable_all_checkbox.bind("<Button-1>", lambda event, checkbox=self.disable_all_checkbox: self.change_text_color(checkbox))
 
         # Add a warning label at the bottom
-        self.warning_label = tk.Label(self, text="ATTENTION!\nAudio alerts will be provided based on selected features.\nWhile the system is running, it may not provide %100 accurate results; errors can occur.", font=("Arial", 20, "bold"), fg="red", bg="light blue")
+        self.warning_label = tk.Label(self, text="ATTENTION!\nAudio alerts will be provided based on selected features.\n*While the system is running, it may not provide %100 accurate results; errors can occur.", font=("Arial", 18, "bold"), fg="red", bg="light blue")
         self.warning_label.pack(side=tk.BOTTOM, pady=8)
         
         title_label = tk.Label(self, text="B. Aydemir, E.Potuk, G. Körpe, Y.B. Avşar",bg= "light blue", font=("Arial", 10, "bold"), fg="black")
-        title_label.pack(side=tk.BOTTOM,pady=4)
+        title_label.pack(side=tk.BOTTOM,pady=4,padx= 0 )
         
 
 
