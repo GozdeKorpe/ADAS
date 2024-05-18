@@ -9,6 +9,7 @@ import threading
 import serial
 
 
+
 # Construct the path to the sound file
 sound_file_path = os.path.join(os.path.dirname(__file__), 'sounds', 'ala.wav')
 sound_eye_path = os.path.join(os.path.dirname(__file__), 'sounds', 'eye.wav')
@@ -54,9 +55,10 @@ ser.flushInput()"""
         print(f"Error in file reading thread: {e}")
         speed_kmh = 0.01 """
 
-def play_warning_sound(sound_path,stopp_event):
-    #while not stopp_event.is_set():
-    playsound(sound_path) 
+def play_warning_sound(sound_path,stop_event):
+    while not stop_event.is_set():
+        #playsound(sound_path) 
+        os.system("play -nq -t alsa synth {} sine {}".format(1, 440))
 
 def my_variables():
     with open('hand.txt', 'r') as file:
@@ -69,12 +71,12 @@ def my_variables():
     
     return hand, face
 
-"""def record_video(file_number):
+def record_video(file_number):
     fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')  # You can also use 'MP4V' or 'MJPG'
     switch_time = 3600 
     start_time = time.time()
-    out = cv2.VideoWriter(f'output{file_number}.mp4', fourcc, 60.0, (640, 480))
-    return out, switch_time, start_time"""
+    out = cv2.VideoWriter(f'output{file_number}.mp4', fourcc, 30.0, (640, 480))
+    return out, switch_time, start_time
 """def canData(ser,  stop_event):
     #Thread function to read and process data from a file.
     global speed_kmh
@@ -274,6 +276,10 @@ class DrowsinessDetector:
 
 def main():
     cap = cv2.VideoCapture(0)
+    
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH,640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    
     tracker = handTracker()
     wheel_detector = WheelDetector()
     eye_detector = DrowsinessDetector()
@@ -281,6 +287,8 @@ def main():
     warning_triggered = False
     warning_sound_thread = None
     sound_thread = None
+    record = record_video(2)
+    record_processed = record_video(4)
     stop_sound_event = threading.Event()
     stop_eye_sound = threading.Event()
     stop_event = threading.Event()  # Event to signal the thread to stop
@@ -296,9 +304,9 @@ def main():
         success, image = cap.read()
         if not success:
             break
-        
-        """record[0].write(image)
-        if (time.time() - record[2]) >= record[1]:
+        image = cv2.flip(image,1)
+        record[0].write(image)
+        """if (time.time() - record[2]) >= record[1]:
             Release the current VideoWriter
             record[0].release()
             file_number = 2 if file_number == 1 else 1
@@ -322,19 +330,15 @@ def main():
             
             hands_last_detected_time = updated_time
             warning_triggered = False
-            """if warning_sound_thread is not None:
-                stop_sound_event.set()  # Stop the sound"""
-                
-                
+            if warning_sound_thread is not None:
+                stop_sound_event.set()  # Stop the sound
         else:
-            if hands_last_detected_time and (current_time - hands_last_detected_time > 1) and not warning_triggered:
+            if hands_last_detected_time and (current_time - hands_last_detected_time > 3) and not warning_triggered:
                 
-                """if warning_sound_thread is None or not warning_sound_thread.is_alive() and (ui[0] == 1):
+                if warning_sound_thread is None or not warning_sound_thread.is_alive() and (ui[0] == 1):
                     stop_sound_event.clear()
                     warning_sound_thread = threading.Thread(target=play_warning_sound, args=(sound_file_path, stop_sound_event))
-                    warning_sound_thread.start()"""
-                if ui[0] == 1:
-                    playsound(sound_file_path)
+                    warning_sound_thread.start()
                 warning_triggered = True
             elif not hands_last_detected_time:
                 hands_last_detected_time = current_time
@@ -377,12 +381,10 @@ def main():
                     if drowsy_start and (time.time() - drowsy_start) > eye_detector.drowsy_threshold:
                         cv2.putText(image, "DROWSY", (50, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
                         #Start a new thread to play the warning sound
-                        """if sound_thread is None or not sound_thread.is_alive() and (ui[1] == 1):
+                        if sound_thread is None or not sound_thread.is_alive() and (ui[1] == 1):
                             stop_eye_sound.clear()
                             sound_thread = threading.Thread(target=play_warning_sound, args=(sound_eye_path,stop_eye_sound))
-                            sound_thread.start()"""
-                        if ui[1] == 1:
-                            playsound(sound_eye_path)
+                            sound_thread.start()
                     else:
                         cv2.putText(image, "AWAKE", (50, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                         if sound_thread is not None:
@@ -392,7 +394,7 @@ def main():
             
 
          
-
+        record_processed[0].write(image)
         cv2.imshow("Video", image)
         
         print("-------",speed_kmh)
@@ -400,6 +402,7 @@ def main():
               # Tell the thread to stop
             stop_event.set()
             #file_thread.join()
+            
             stop_sound_event.set()
             stop_eye_sound.set()
             break
